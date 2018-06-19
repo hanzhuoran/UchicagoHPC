@@ -1,0 +1,4 @@
+*.error
+*.output
+*.cobaltlog
+*.txt

@@ -49,6 +49,7 @@ int main (int argc, char *argv[])
 // Check Stability
 		if (dt > dx/sqrt(2*(u*u+v*v)))
 		{
+			cout<<dt<< "vs" << dx/sqrt(2*(u*u+v*v))<<endl;
 			cout<<"Numerically Instable"<<endl;
 			exit(1);
 		}
@@ -80,7 +81,7 @@ int main (int argc, char *argv[])
 //Lax Scheme
 		for (int n = 0; n < NT ; n++)
 		{
-			#pragma omp parallel for private(iprev,inext,jprev,jnext)
+			#pragma omp parallel for firstprivate(iprev,inext,jprev,jnext)
 			// default(none)
 			for(int i = 0; i< N ; i++)
 			{
