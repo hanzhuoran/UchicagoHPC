@@ -54,16 +54,13 @@ void run_parallel_problem(long nBodies, double dt, long nIters, char * fname) {
 		MPI_Recv(locals, nglobal, TYPE_BODY, 0, 1, MPI_COMM_WORLD, &status);
 	}
 
-	// Initialize file descriptor
-	// NOTE: this line causes uncertainty when a fixed random series is needed
-	MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
-
+	fh = initialize_IO(nBodies, nIters, fname, mype);
 	double start = get_time();
 
 	// Loop over timesteps
 	for (long iter = 0; iter < nIters; iter++) {
 
-		if (mype == 0 && (iter*100) % nIters == 0 ) write(STDOUT_FILENO, ".", 2);
+		// if (mype == 0 && (iter*100) % nIters == 0 ) write(STDOUT_FILENO, ".", 2);
 
 		// Output body positions to file
 		distributed_write_timestep(locals, nBodies, iter, nIters, nprocs, mype, &fh);
@@ -183,6 +180,16 @@ void parallel_randomizeBodies(Body * bodies, long nBodies, int mype, int nprocs)
 	}
 }
 
+// Opens MPI file, and writes header information (nBodies, iterations)
+MPI_File initialize_IO(long nBodies, long nIters, char * fname, int mype)
+{
+	MPI_File fh;
+	FILE * datafile = fopen(fname,"w");
+	fprintf(datafile, "%+.*le %+.*le %+.*le\n", 10, (double)nBodies, 10, (double) nIters, 10, 0.0);
+	MPI_File_open(MPI_COMM_WORLD, fname, MPI_MODE_CREATE|MPI_MODE_RDWR, MPI_INFO_NULL, &fh);
+	return fh;
+}
+
 // Writes all particle locations for a single timestep
 void distributed_write_timestep(Body * local_bodies, long nBodies,
 	long iter, long nIters, int nprocs, int mype, MPI_File * fh) {
@@ -193,28 +200,26 @@ void distributed_write_timestep(Body * local_bodies, long nBodies,
 	}
 
 	long offset, length;
-	MPI_Offset byte_offset;
-	double * dbuffer;
-
 	length = jobs_manage(nBodies, mype, nprocs, &offset);
-	byte_offset = (iter * nBodies + offset) * 3 * sizeof(double);
-	dbuffer = (double*) calloc(3 * length, sizeof(double));
+	MPI_Offset byte_offset;
+	long totallength = length*54;
+	char * ptr;
+
+	// printf("mype is %d with offset of %ld has length %ld \n", mype, offset,length);
+	// printf("total length is %ld \",totallength);
+	byte_offset = (iter * nBodies + offset+1) * 54 *sizeof(char);
+	ptr = (char *) malloc(totallength*sizeof(char));
 
 	for (int i=0; i<length; i++) {
-		dbuffer[3*i + 0] = local_bodies[i].x;
-		dbuffer[3*i + 1] = local_bodies[i].y;
-		dbuffer[3*i + 2] = local_bodies[i].z;
+		sprintf(&ptr[54*i], "%+.*le %+.*le %+.*le\n", 10, 
+			local_bodies[i].x, 10, local_bodies[i].y, 10, local_bodies[i].z);
+
 	}
 
-	// IO Level 2
-	//MPI_File_seek(*fh, (iter*nBodies + offset) * 3*sizeof(double), MPI_SEEK_SET);
-	//MPI_File_write(*fh, dbuffer, 3 * length, MPI_DOUBLE, MPI_STATUS_IGNORE);
+	MPI_File_set_view(*fh, byte_offset, MPI_CHAR, MPI_CHAR, "native", MPI_INFO_NULL) ;
+	MPI_File_write_all(*fh, ptr, strlen(ptr), MPI_CHAR, MPI_STATUS_IGNORE);
 
-	// IO Level 3
-	MPI_File_set_view(*fh, byte_offset, MPI_DOUBLE, MPI_DOUBLE, "native", MPI_INFO_NULL) ;
-	MPI_File_write_all(*fh, dbuffer, 3 * length, MPI_DOUBLE, MPI_STATUS_IGNORE);
-
-	free(dbuffer);
+	free(ptr);
 }
 
 // Rank job size management

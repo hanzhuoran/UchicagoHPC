@@ -53,4 +53,5 @@ void parallel_randomizeBodies(Body * bodies, long nBodies, int mype, int nprocs)
 void distributed_write_timestep(Body * local_bodies, long nBodies,
 	long timestep, long nIters, int nprocs, int mype, MPI_File * fh);
 long jobs_manage(long nBodies, int mype, int nprocs, long * iptr);
+MPI_File initialize_IO(long nBodies, long nIters, char * fname, int mype);
 #endif
