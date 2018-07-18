@@ -49,7 +49,15 @@ vec3d vecsub(vec3d vec1, vec3d vec2){
 double vecdot(vec3d vec1, vec3d vec2){
 	double ans = 0;
 
-	ans = sqrt(vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z);
+	// printf("vx %lf \n", vec1.x);
+	// printf("vy %lf \n", vec1.y);
+	// printf("vz %lf \n", vec1.z);
+
+
+	// printf("cx %lf \n", vec2.x);
+	// printf("cy %lf \n", vec2.y);
+	// printf("cz %lf \n", vec2.z);
+	ans = vec1.x * vec2.x + vec1.y * vec2.y + vec1.z * vec2.z;
 
 	return ans;
 }
@@ -58,7 +66,7 @@ double vecdot(vec3d vec1, vec3d vec2){
 double norm(vec3d vec1){
 	double ans = 0;
 
-	ans = vec1.x * vec1.x + vec1.y * vec1.y + vec1.z * vec1.z;
+	ans = sqrt(vec1.x * vec1.x + vec1.y * vec1.y + vec1.z * vec1.z);
 
 	return ans;
 }

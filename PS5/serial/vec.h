@@ -1,7 +1,7 @@
 #ifndef VEC_H
 #define VEC_H
 #include <math.h>
-
+#include <stdio.h>
 typedef struct {
 	double x, y, z;
 } vec3d;
